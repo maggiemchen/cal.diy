@@ -138,10 +138,11 @@ type CellProps = {
 function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
   const { timeFormat } = useBookerTime();
 
-  const { onEmptyCellClick, hoverEventDuration } = useCalendarStore(
+  const { onEmptyCellClick, hoverEventDuration, eventsDisabled } = useCalendarStore(
     (state) => ({
       onEmptyCellClick: state.onEmptyCellClick,
       hoverEventDuration: state.hoverEventDuration,
+      eventsDisabled: state.eventsDisabled,
     }),
     shallow
   );
@@ -150,11 +151,11 @@ function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
     <div
       className={classNames(
         "group flex w-[calc(100%-1px)] items-center justify-center",
-        isDisabled && "pointer-events-none",
+        (isDisabled || eventsDisabled) && "pointer-events-none",
         !isDisabled && "bg-default dark:bg-muted",
         topOffsetMinutes && "absolute"
       )}
-      data-disabled={isDisabled}
+      data-disabled={isDisabled || eventsDisabled}
       data-slot={timeSlot.toISOString()}
       data-testid="calendar-empty-cell"
       style={{
@@ -165,7 +166,7 @@ function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
       onClick={() => {
         !eventsDisabled && onEmptyCellClick && onEmptyCellClick(timeSlot.toDate());
       }}>
-      {!isDisabled && hoverEventDuration !== 0 && (
+      {!isDisabled && !eventsDisabled && hoverEventDuration !== 0 && (
         <div
           className={classNames(
             "opacity-4 bg-brand-default hover:bg-brand-default text-brand dark:border-emphasis absolute hidden rounded-[4px] p-[6px] text-xs font-semibold leading-5 group-hover:flex group-hover:cursor-pointer",
