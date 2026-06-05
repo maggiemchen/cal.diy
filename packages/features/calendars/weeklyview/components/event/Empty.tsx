@@ -150,11 +150,11 @@ function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
     <div
       className={classNames(
         "group flex w-[calc(100%-1px)] items-center justify-center",
-        isDisabled && "pointer-events-none",
+        (isDisabled || eventsDisabled) && "pointer-events-none",
         !isDisabled && "bg-default dark:bg-muted",
         topOffsetMinutes && "absolute"
       )}
-      data-disabled={isDisabled}
+      data-disabled={isDisabled || eventsDisabled}
       data-slot={timeSlot.toISOString()}
       data-testid="calendar-empty-cell"
       style={{
