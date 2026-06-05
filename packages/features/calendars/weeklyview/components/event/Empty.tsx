@@ -163,9 +163,9 @@ function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
         top: topOffsetMinutes ? `calc(${topOffsetMinutes}*var(--one-minute-height))` : undefined,
       }}
       onClick={() => {
-        onEmptyCellClick && onEmptyCellClick(timeSlot.toDate());
+        !eventsDisabled && onEmptyCellClick && onEmptyCellClick(timeSlot.toDate());
       }}>
-      {!isDisabled && !eventsDisabled && hoverEventDuration !== 0 && (
+      {!isDisabled && hoverEventDuration !== 0 && (
         <div
           className={classNames(
             "opacity-4 bg-brand-default hover:bg-brand-default text-brand dark:border-emphasis absolute hidden rounded-[4px] p-[6px] text-xs font-semibold leading-5 group-hover:flex group-hover:cursor-pointer",
