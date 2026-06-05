@@ -150,11 +150,11 @@ function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
     <div
       className={classNames(
         "group flex w-[calc(100%-1px)] items-center justify-center",
-        (isDisabled || eventsDisabled) && "pointer-events-none",
+        isDisabled && "pointer-events-none",
         !isDisabled && "bg-default dark:bg-muted",
         topOffsetMinutes && "absolute"
       )}
-      data-disabled={isDisabled || eventsDisabled}
+      data-disabled={isDisabled}
       data-slot={timeSlot.toISOString()}
       data-testid="calendar-empty-cell"
       style={{
@@ -165,7 +165,7 @@ function Cell({ isDisabled, topOffsetMinutes, timeSlot }: CellProps) {
       onClick={() => {
         onEmptyCellClick && onEmptyCellClick(timeSlot.toDate());
       }}>
-      {!isDisabled && hoverEventDuration !== 0 && (
+      {!isDisabled && !eventsDisabled && hoverEventDuration !== 0 && (
         <div
           className={classNames(
             "opacity-4 bg-brand-default hover:bg-brand-default text-brand dark:border-emphasis absolute hidden rounded-[4px] p-[6px] text-xs font-semibold leading-5 group-hover:flex group-hover:cursor-pointer",
