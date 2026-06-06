@@ -628,8 +628,21 @@ export class InsightsBookingBaseService {
       })
     );
 
-    // 6. Combine booking data with attendee data
+    // Helper function to format date/time for CSV export
+    const formatDateForCsv = (date: Date) => {
+      return {
+        date: date.toISOString().split('T')[0], // YYYY-MM-DD
+        time: date.toISOString().split('T')[1].split('.')[0], // HH:MM:SS
+      };
+    };
+
+    // 6. Combine booking data with attendee data and format dates
     const data = csvData.map((bookingTimeStatus) => {
+      // Format date/time fields into separate date and time columns
+      const createdAtFormatted = formatDateForCsv(bookingTimeStatus.createdAt);
+      const startTimeFormatted = formatDateForCsv(bookingTimeStatus.startTime);
+      const endTimeFormatted = formatDateForCsv(bookingTimeStatus.endTime);
+
       if (!bookingTimeStatus.uid) {
         // should not be reached because we filtered above
         const nullAttendeeFields: Record<string, null> = {};
@@ -638,7 +651,37 @@ export class InsightsBookingBaseService {
         }
 
         return {
-          ...bookingTimeStatus,
+          // Basic booking info
+          id: bookingTimeStatus.id,
+          uid: bookingTimeStatus.uid,
+          title: bookingTimeStatus.title,
+          
+          // Split created date/time
+          "Created Date": createdAtFormatted.date,
+          "Created Time": createdAtFormatted.time,
+          
+          // Other fields
+          timeStatus: bookingTimeStatus.timeStatus,
+          eventTypeId: bookingTimeStatus.eventTypeId,
+          eventLength: bookingTimeStatus.eventLength,
+          
+          // Split start date/time
+          "Start Date": startTimeFormatted.date,
+          "Start Time": startTimeFormatted.time,
+          
+          // Split end date/time
+          "End Date": endTimeFormatted.date,
+          "End Time": endTimeFormatted.time,
+          
+          // Remaining fields
+          paid: bookingTimeStatus.paid,
+          userEmail: bookingTimeStatus.userEmail,
+          userUsername: bookingTimeStatus.userUsername,
+          rating: bookingTimeStatus.rating,
+          ratingFeedback: bookingTimeStatus.ratingFeedback,
+          noShowHost: bookingTimeStatus.noShowHost,
+          
+          // Attendee data
           noShowGuests: null,
           noShowGuestsCount: 0,
           ...nullAttendeeFields,
@@ -654,7 +697,37 @@ export class InsightsBookingBaseService {
         }
 
         return {
-          ...bookingTimeStatus,
+          // Basic booking info
+          id: bookingTimeStatus.id,
+          uid: bookingTimeStatus.uid,
+          title: bookingTimeStatus.title,
+          
+          // Split created date/time
+          "Created Date": createdAtFormatted.date,
+          "Created Time": createdAtFormatted.time,
+          
+          // Other fields
+          timeStatus: bookingTimeStatus.timeStatus,
+          eventTypeId: bookingTimeStatus.eventTypeId,
+          eventLength: bookingTimeStatus.eventLength,
+          
+          // Split start date/time
+          "Start Date": startTimeFormatted.date,
+          "Start Time": startTimeFormatted.time,
+          
+          // Split end date/time
+          "End Date": endTimeFormatted.date,
+          "End Time": endTimeFormatted.time,
+          
+          // Remaining fields
+          paid: bookingTimeStatus.paid,
+          userEmail: bookingTimeStatus.userEmail,
+          userUsername: bookingTimeStatus.userUsername,
+          rating: bookingTimeStatus.rating,
+          ratingFeedback: bookingTimeStatus.ratingFeedback,
+          noShowHost: bookingTimeStatus.noShowHost,
+          
+          // Attendee data
           noShowGuests: null,
           noShowGuestsCount: 0,
           ...nullAttendeeFields,
@@ -662,7 +735,37 @@ export class InsightsBookingBaseService {
       }
 
       return {
-        ...bookingTimeStatus,
+        // Basic booking info
+        id: bookingTimeStatus.id,
+        uid: bookingTimeStatus.uid,
+        title: bookingTimeStatus.title,
+        
+        // Split created date/time
+        "Created Date": createdAtFormatted.date,
+        "Created Time": createdAtFormatted.time,
+        
+        // Other fields
+        timeStatus: bookingTimeStatus.timeStatus,
+        eventTypeId: bookingTimeStatus.eventTypeId,
+        eventLength: bookingTimeStatus.eventLength,
+        
+        // Split start date/time
+        "Start Date": startTimeFormatted.date,
+        "Start Time": startTimeFormatted.time,
+        
+        // Split end date/time
+        "End Date": endTimeFormatted.date,
+        "End Time": endTimeFormatted.time,
+        
+        // Remaining fields
+        paid: bookingTimeStatus.paid,
+        userEmail: bookingTimeStatus.userEmail,
+        userUsername: bookingTimeStatus.userUsername,
+        rating: bookingTimeStatus.rating,
+        ratingFeedback: bookingTimeStatus.ratingFeedback,
+        noShowHost: bookingTimeStatus.noShowHost,
+        
+        // Attendee data
         noShowGuests: attendeeData.noShowGuests,
         noShowGuestsCount: attendeeData.noShowGuestsCount,
         ...Object.fromEntries(Object.entries(attendeeData).filter(([key]) => key.startsWith("attendee"))),
