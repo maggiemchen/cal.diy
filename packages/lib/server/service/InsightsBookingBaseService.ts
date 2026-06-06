@@ -628,7 +628,7 @@ export class InsightsBookingBaseService {
       })
     );
 
-    // 6. Combine booking data with attendee data
+    // 6. Combine booking data with attendee data and add separate date/time columns
     const data = csvData.map((bookingTimeStatus) => {
       if (!bookingTimeStatus.uid) {
         // should not be reached because we filtered above
@@ -639,6 +639,13 @@ export class InsightsBookingBaseService {
 
         return {
           ...bookingTimeStatus,
+          // Add separate date and time columns for Excel-friendly CSV export
+          createdDate: dayjs(bookingTimeStatus.createdAt).format("YYYY-MM-DD"),
+          createdTime: dayjs(bookingTimeStatus.createdAt).format("HH:mm:ss"),
+          startDate: dayjs(bookingTimeStatus.startTime).format("YYYY-MM-DD"),
+          startTime_time: dayjs(bookingTimeStatus.startTime).format("HH:mm:ss"),
+          endDate: dayjs(bookingTimeStatus.endTime).format("YYYY-MM-DD"),
+          endTime_time: dayjs(bookingTimeStatus.endTime).format("HH:mm:ss"),
           noShowGuests: null,
           noShowGuestsCount: 0,
           ...nullAttendeeFields,
@@ -655,6 +662,13 @@ export class InsightsBookingBaseService {
 
         return {
           ...bookingTimeStatus,
+          // Add separate date and time columns for Excel-friendly CSV export
+          createdDate: dayjs(bookingTimeStatus.createdAt).format("YYYY-MM-DD"),
+          createdTime: dayjs(bookingTimeStatus.createdAt).format("HH:mm:ss"),
+          startDate: dayjs(bookingTimeStatus.startTime).format("YYYY-MM-DD"),
+          startTime_time: dayjs(bookingTimeStatus.startTime).format("HH:mm:ss"),
+          endDate: dayjs(bookingTimeStatus.endTime).format("YYYY-MM-DD"),
+          endTime_time: dayjs(bookingTimeStatus.endTime).format("HH:mm:ss"),
           noShowGuests: null,
           noShowGuestsCount: 0,
           ...nullAttendeeFields,
@@ -663,6 +677,13 @@ export class InsightsBookingBaseService {
 
       return {
         ...bookingTimeStatus,
+        // Add separate date and time columns for Excel-friendly CSV export
+        createdDate: dayjs(bookingTimeStatus.createdAt).format("YYYY-MM-DD"),
+        createdTime: dayjs(bookingTimeStatus.createdAt).format("HH:mm:ss"),
+        startDate: dayjs(bookingTimeStatus.startTime).format("YYYY-MM-DD"),
+        startTime_time: dayjs(bookingTimeStatus.startTime).format("HH:mm:ss"),
+        endDate: dayjs(bookingTimeStatus.endTime).format("YYYY-MM-DD"),
+        endTime_time: dayjs(bookingTimeStatus.endTime).format("HH:mm:ss"),
         noShowGuests: attendeeData.noShowGuests,
         noShowGuestsCount: attendeeData.noShowGuestsCount,
         ...Object.fromEntries(Object.entries(attendeeData).filter(([key]) => key.startsWith("attendee"))),
