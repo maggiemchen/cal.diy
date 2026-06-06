@@ -3,6 +3,20 @@ import { z } from "zod";
 
 import dayjs from "@calcom/dayjs";
 import { makeSqlCondition } from "@calcom/features/data-table/lib/server";
+
+// Local date formatting functions to avoid circular imports
+const formatDateTimeForCsv = (date: Date | null | undefined): { date: string; time: string } => {
+  if (!date) return { date: "", time: "" };
+  try {
+    const isoString = date.toISOString();
+    return {
+      date: isoString.split("T")[0], // YYYY-MM-DD format
+      time: isoString.split("T")[1].split(".")[0] // HH:MM:SS format
+    };
+  } catch {
+    return { date: "", time: "" };
+  }
+};
 import { ZColumnFilter } from "@calcom/features/data-table/lib/types";
 import { ColumnFilterType } from "@calcom/features/data-table/lib/types";
 import { type ColumnFilter } from "@calcom/features/data-table/lib/types";
@@ -628,8 +642,34 @@ export class InsightsBookingBaseService {
       })
     );
 
-    // 6. Combine booking data with attendee data
+    // 6. Combine booking data with attendee data and format timestamps
     const data = csvData.map((bookingTimeStatus) => {
+      // Format date/time fields into separate columns
+      const createdAtFormatted = formatDateTimeForCsv(bookingTimeStatus.createdAt);
+      const startTimeFormatted = formatDateTimeForCsv(bookingTimeStatus.startTime);
+      const endTimeFormatted = formatDateTimeForCsv(bookingTimeStatus.endTime);
+
+      const baseBookingData = {
+        id: bookingTimeStatus.id,
+        uid: bookingTimeStatus.uid,
+        title: bookingTimeStatus.title,
+        createdDate: createdAtFormatted.date,
+        createdTime: createdAtFormatted.time,
+        timeStatus: bookingTimeStatus.timeStatus,
+        eventTypeId: bookingTimeStatus.eventTypeId,
+        eventLength: bookingTimeStatus.eventLength,
+        startDate: startTimeFormatted.date,
+        startTime: startTimeFormatted.time,
+        endDate: endTimeFormatted.date,
+        endTime: endTimeFormatted.time,
+        paid: bookingTimeStatus.paid,
+        userEmail: bookingTimeStatus.userEmail,
+        userUsername: bookingTimeStatus.userUsername,
+        rating: bookingTimeStatus.rating,
+        ratingFeedback: bookingTimeStatus.ratingFeedback,
+        noShowHost: bookingTimeStatus.noShowHost,
+      };
+
       if (!bookingTimeStatus.uid) {
         // should not be reached because we filtered above
         const nullAttendeeFields: Record<string, null> = {};
@@ -638,7 +678,7 @@ export class InsightsBookingBaseService {
         }
 
         return {
-          ...bookingTimeStatus,
+          ...baseBookingData,
           noShowGuests: null,
           noShowGuestsCount: 0,
           ...nullAttendeeFields,
@@ -654,7 +694,7 @@ export class InsightsBookingBaseService {
         }
 
         return {
-          ...bookingTimeStatus,
+          ...baseBookingData,
           noShowGuests: null,
           noShowGuestsCount: 0,
           ...nullAttendeeFields,
@@ -662,7 +702,7 @@ export class InsightsBookingBaseService {
       }
 
       return {
-        ...bookingTimeStatus,
+        ...baseBookingData,
         noShowGuests: attendeeData.noShowGuests,
         noShowGuestsCount: attendeeData.noShowGuestsCount,
         ...Object.fromEntries(Object.entries(attendeeData).filter(([key]) => key.startsWith("attendee"))),

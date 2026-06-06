@@ -10,6 +10,20 @@ import {
 import { zodFields as routingFormFieldsSchema } from "@calcom/app-store/routing-forms/zod";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import type { InsightsRoutingBaseService } from "@calcom/lib/server/service/InsightsRoutingBaseService";
+
+// Local date formatting function 
+const formatDateTimeForCsv = (date: Date | null | undefined): { date: string; time: string } => {
+  if (!date) return { date: "", time: "" };
+  try {
+    const isoString = date.toISOString();
+    return {
+      date: isoString.split("T")[0], // YYYY-MM-DD format
+      time: isoString.split("T")[1].split(".")[0] // HH:MM:SS format
+    };
+  } catch {
+    return { date: "", time: "" };
+  }
+};
 import { readonlyPrisma as prisma } from "@calcom/prisma";
 import type { Prisma } from "@calcom/prisma/client";
 
@@ -151,17 +165,27 @@ class RoutingEventsInsights {
         return acc;
       }, {} as Record<string, string | undefined>);
 
+      // Format date/time fields into separate columns
+      const submittedAtFormatted = formatDateTimeForCsv(item.createdAt);
+      const bookingCreatedAtFormatted = formatDateTimeForCsv(item.bookingCreatedAt);
+      const bookingStartTimeFormatted = formatDateTimeForCsv(item.bookingStartTime);
+      const bookingEndTimeFormatted = formatDateTimeForCsv(item.bookingEndTime);
+
       return {
         "Booking UID": item.bookingUid,
         "Booking Link": item.bookingUid ? `${WEBAPP_URL}/booking/${item.bookingUid}` : "",
         "Response ID": item.id,
         "Form Name": item.formName,
-        "Submitted At": item.createdAt.toISOString(),
+        "Submitted Date": submittedAtFormatted.date,
+        "Submitted Time": submittedAtFormatted.time,
         "Has Booking": item.bookingUid !== null,
         "Booking Status": item.bookingStatus || "NO_BOOKING",
-        "Booking Created At": item.bookingCreatedAt?.toISOString() || "",
-        "Booking Start Time": item.bookingStartTime?.toISOString() || "",
-        "Booking End Time": item.bookingEndTime?.toISOString() || "",
+        "Booking Created Date": bookingCreatedAtFormatted.date,
+        "Booking Created Time": bookingCreatedAtFormatted.time,
+        "Booking Start Date": bookingStartTimeFormatted.date,
+        "Booking Start Time": bookingStartTimeFormatted.time,
+        "Booking End Date": bookingEndTimeFormatted.date,
+        "Booking End Time": bookingEndTimeFormatted.time,
         "Assignment Reason": item.bookingAssignmentReason || "",
         "Routed To Name": item.bookingUserName || "",
         "Routed To Email": item.bookingUserEmail || "",

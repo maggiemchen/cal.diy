@@ -3,6 +3,20 @@ import { getSession } from "next-auth/react";
 
 import { sanitizeValue } from "@calcom/lib/csvUtils";
 import { entityPrismaWhereClause, canEditEntity } from "@calcom/lib/entityPermissionUtils.server";
+
+// Local date formatting function
+const formatDateTimeForCsv = (date: Date | null | undefined): { date: string; time: string } => {
+  if (!date) return { date: "", time: "" };
+  try {
+    const isoString = date.toISOString();
+    return {
+      date: isoString.split("T")[0], // YYYY-MM-DD format
+      time: isoString.split("T")[1].split(".")[0] // HH:MM:SS format
+    };
+  } catch {
+    return { date: "", time: "" };
+  }
+};
 import prisma from "@calcom/prisma";
 import type { App_RoutingForms_Form } from "@calcom/prisma/client";
 
@@ -42,7 +56,10 @@ async function* getResponses(formId: string, fields: Fields) {
         const serializedValue = readableValues.map((value) => sanitizeValue(value)).join(" | ");
         csvCells.push(serializedValue);
       });
-      csvCells.push(response.createdAt.toISOString());
+      // Add separate date and time columns for created date
+      const createdAtFormatted = formatDateTimeForCsv(response.createdAt);
+      csvCells.push(createdAtFormatted.date);
+      csvCells.push(createdAtFormatted.time);
       csv.push(csvCells.join(","));
     });
     skip += take;
@@ -99,7 +116,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.write(
     `${headerFields
       .map((field) => `${field.label}${field.deleted ? "(Deleted)" : ""}`)
-      .concat(["Submission Time"])
+      .concat(["Submission Date", "Submission Time"])
       .join(",")}\n`
   );
 
