@@ -43,6 +43,22 @@ export interface IFilterSegmentRepository {
     tableIdentifier: string;
     segmentId: number | null;
   }): Promise<UserFilterSegmentPreference | null>;
+
+  createSystemSegment({
+    input,
+  }: {
+    input: {
+      name: string;
+      tableIdentifier: string;
+      category?: string;
+      activeFilters?: any;
+      sorting?: any;
+      columnVisibility?: any;
+      columnSizing?: any;
+      perPage: number;
+      searchTerm?: string;
+    };
+  }): Promise<FilterSegment>;
 }
 
 export class FilterSegmentRepository implements IFilterSegmentRepository {
@@ -60,7 +76,7 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
       })
       .then((memberships) => memberships.map((m) => m.teamId));
 
-    // Fetch both user-scoped and team-scoped segments
+    // Fetch user-scoped, team-scoped, and system segments
     const segments = await prisma.filterSegment.findMany({
       where: {
         tableIdentifier,
@@ -77,6 +93,11 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
               in: userTeamIds,
             },
           },
+          // System segments (available to everyone)
+          {
+            scope: "SYSTEM",
+            isSystem: true,
+          },
         ],
       },
       select: {
@@ -84,6 +105,8 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
         name: true,
         tableIdentifier: true,
         scope: true,
+        isSystem: true,
+        category: true,
         activeFilters: true,
         sorting: true,
         columnVisibility: true,
@@ -102,7 +125,8 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
         },
       },
       orderBy: [
-        { scope: "desc" }, // USER segments first, then TEAM segments
+        { scope: "desc" }, // SYSTEM segments first, then TEAM, then USER
+        { category: "asc" }, // Within system segments, order by category
         { createdAt: "desc" }, // Newest first within each scope
       ],
     });
@@ -135,6 +159,11 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
 
   async create({ userId, input }: { userId: number; input: TCreateFilterSegmentInputSchema }) {
     const { scope, teamId, ...filterData } = input;
+
+    // System segments cannot be created by users
+    if (scope === "SYSTEM") {
+      throw new Error("System segments cannot be created by users");
+    }
 
     // If scope is TEAM, verify user has admin/owner permissions
     if (scope === "TEAM") {
@@ -262,6 +291,8 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
       },
       select: {
         id: true,
+        scope: true,
+        isSystem: true,
       },
     });
 
@@ -269,10 +300,44 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
       throw new Error("Filter segment not found or you don't have permission to delete it");
     }
 
+    // Prevent deletion of system segments
+    if (existingSegment.scope === "SYSTEM" || existingSegment.isSystem) {
+      throw new Error("System segments cannot be deleted");
+    }
+
     // Delete the filter segment
     await prisma.filterSegment.delete({
       where: { id },
     });
+  }
+
+  async createSystemSegment({
+    input,
+  }: {
+    input: {
+      name: string;
+      tableIdentifier: string;
+      category?: string;
+      activeFilters?: any;
+      sorting?: any;
+      columnVisibility?: any;
+      columnSizing?: any;
+      perPage: number;
+      searchTerm?: string;
+    };
+  }) {
+    // Create a system segment
+    const filterSegment = await prisma.filterSegment.create({
+      data: {
+        ...input,
+        scope: "SYSTEM",
+        isSystem: true,
+        userId: null,
+        teamId: null,
+      },
+    });
+
+    return filterSegment;
   }
 
   async setPreference({

@@ -241,7 +241,9 @@ export type FilterSegmentOutput = {
   id: number;
   name: string;
   tableIdentifier: string;
-  scope: "USER" | "TEAM";
+  scope: "USER" | "TEAM" | "SYSTEM";
+  isSystem: boolean;
+  category: string | null;
   activeFilters: ActiveFilters;
   sorting: SortingState;
   columnVisibility: Record<string, boolean>;
@@ -250,7 +252,7 @@ export type FilterSegmentOutput = {
   searchTerm: string | null;
   createdAt: Date;
   updatedAt: Date;
-  userId: number;
+  userId: number | null;
   teamId: number | null;
   team: { id: number; name: string } | null;
 };

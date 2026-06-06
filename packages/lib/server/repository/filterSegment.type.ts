@@ -51,9 +51,19 @@ const userCreateSchema = z.object({
   ...baseCreateSchema,
 });
 
+// Schema for system scope - no userId or teamId, includes category
+const systemCreateSchema = z.object({
+  scope: z.literal("SYSTEM"),
+  teamId: z.undefined().optional(),
+  category: z.string().optional(),
+  isSystem: z.literal(true),
+  ...baseCreateSchema,
+});
+
 export const ZCreateFilterSegmentInputSchema = z.discriminatedUnion("scope", [
   teamCreateSchema,
   userCreateSchema,
+  systemCreateSchema,
 ]);
 
 export type TCreateFilterSegmentInputSchema = z.infer<typeof ZCreateFilterSegmentInputSchema>;
@@ -92,6 +102,7 @@ const userUpdateSchema = z.object({
   ...baseUpdateSchema,
 });
 
+// System segments cannot be updated by users
 export const ZUpdateFilterSegmentInputSchema = z.discriminatedUnion("scope", [
   teamUpdateSchema,
   userUpdateSchema,

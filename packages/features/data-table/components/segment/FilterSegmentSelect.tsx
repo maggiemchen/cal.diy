@@ -61,12 +61,27 @@ export function FilterSegmentSelect() {
   const segmentGroups = useMemo(() => {
     const sortFn = (a: FilterSegmentOutput, b: FilterSegmentOutput) => a.name.localeCompare(b.name);
 
-    const personalSegments = segments?.filter((segment) => !segment.team) || [];
+    const systemSegments = segments?.filter((segment) => segment.scope === "SYSTEM") || [];
+    const personalSegments = segments?.filter((segment) => segment.scope === "USER" && !segment.team) || [];
     const teamSegments =
       segments?.filter(
         (segment): segment is FilterSegmentOutput & { team: NonNullable<FilterSegmentOutput["team"]> } =>
-          segment.team !== null
+          segment.scope === "TEAM" && segment.team !== null
       ) || [];
+
+    // Group system segments by category
+    const systemSegmentsByCategory = systemSegments.reduce<{ [category: string]: FilterSegmentOutput[] }>(
+      (acc, segment) => {
+        const categoryKey = segment.category || "general";
+        const categoryLabel = categoryKey.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+        if (!acc[categoryLabel]) {
+          acc[categoryLabel] = [];
+        }
+        acc[categoryLabel].push(segment);
+        return acc;
+      },
+      {}
+    );
 
     // Group team segments by team name
     const teamSegmentsByTeam = teamSegments.reduce<{ [teamName: string]: FilterSegmentOutput[] }>(
@@ -82,18 +97,30 @@ export function FilterSegmentSelect() {
     );
 
     return [
+      // System segments first (predefined)
+      ...Object.entries(systemSegmentsByCategory)
+        .map(([categoryName, segments]) => ({
+          label: categoryName,
+          segments: segments.sort(sortFn),
+          isSystem: true,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+      // Personal segments
       ...(personalSegments.length > 0
         ? [
             {
               label: t("personal"),
               segments: personalSegments.sort(sortFn),
+              isSystem: false,
             },
           ]
         : []),
+      // Team segments
       ...Object.entries(teamSegmentsByTeam)
         .map(([teamName, segments]) => ({
           label: teamName,
           segments: segments.sort(sortFn),
+          isSystem: false,
         }))
         .sort((a, b) => a.label.localeCompare(b.label)),
     ];
@@ -126,12 +153,17 @@ export function FilterSegmentSelect() {
             {segmentGroups.map((group, index) => (
               <div key={index}>
                 {group.label && (
-                  <DropdownMenuLabel className={index === 0 ? "" : "mt-2"}>{group.label}</DropdownMenuLabel>
+                  <DropdownMenuLabel className={index === 0 ? "" : "mt-2"}>
+                    {group.label}
+                    {group.isSystem && (
+                      <Icon name="sparkles" className="ml-1 h-3 w-3 text-blue-500" />
+                    )}
+                  </DropdownMenuLabel>
                 )}
                 {group.segments.map((segment) => (
                   <DropdownItemWithSubmenu
                     key={segment.id}
-                    submenuItems={submenuItems}
+                    submenuItems={group.isSystem ? [] : submenuItems} // System segments have no submenu actions
                     segment={segment}
                     onSelect={() => {
                       if (segmentId === segment.id) {
@@ -142,6 +174,9 @@ export function FilterSegmentSelect() {
                     }}>
                     {segment.id === segmentId && <Icon name="check" className="ml-3 h-4 w-4" />}
                     <span className="ml-3">{segment.name}</span>
+                    {segment.isSystem && (
+                      <Icon name="sparkles" className="ml-1 h-3 w-3 text-blue-500" />
+                    )}
                   </DropdownItemWithSubmenu>
                 ))}
               </div>
@@ -186,6 +221,11 @@ function DropdownItemWithSubmenu({
 
   // Filter submenu items based on segment type and user role
   const filteredSubmenuItems = submenuItems.filter((item) => {
+    // System segments: no actions allowed
+    if (segment.isSystem || segment.scope === "SYSTEM") {
+      return false;
+    }
+
     if (!segment.team) {
       // Personal segments: show all actions
       return true;
@@ -200,43 +240,45 @@ function DropdownItemWithSubmenu({
       <div className="flex items-center">
         {children}
         <div className="grow" />
-        <Dropdown open={isOpen} onOpenChange={setIsOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              StartIcon="ellipsis"
-              variant="icon"
-              color="minimal"
-              className="rounded-full"
-              data-testid="filter-segment-select-submenu-button"
-              onClick={(event) => {
-                event.preventDefault();
-                setIsOpen((prev) => !prev);
-              }}
-            />
-          </DropdownMenuTrigger>
-          <DropdownMenuPortal>
-            <DropdownMenuContent
-              align="start"
-              side="right"
-              sideOffset={8}
-              data-testid="filter-segment-select-submenu-content">
-              {filteredSubmenuItems.map((item, index) => (
-                <DropdownMenuItem key={index}>
-                  <DropdownItem
-                    color={item.isDestructive ? "destructive" : undefined}
-                    StartIcon={item.iconName}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      item.onClick(segment);
-                      setIsOpen(false);
-                    }}>
-                    {t(item.labelKey)}
-                  </DropdownItem>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenuPortal>
-        </Dropdown>
+        {filteredSubmenuItems.length > 0 && (
+          <Dropdown open={isOpen} onOpenChange={setIsOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                StartIcon="ellipsis"
+                variant="icon"
+                color="minimal"
+                className="rounded-full"
+                data-testid="filter-segment-select-submenu-button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setIsOpen((prev) => !prev);
+                }}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuContent
+                align="start"
+                side="right"
+                sideOffset={8}
+                data-testid="filter-segment-select-submenu-content">
+                {filteredSubmenuItems.map((item, index) => (
+                  <DropdownMenuItem key={index}>
+                    <DropdownItem
+                      color={item.isDestructive ? "destructive" : undefined}
+                      StartIcon={item.iconName}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        item.onClick(segment);
+                        setIsOpen(false);
+                      }}>
+                      {t(item.labelKey)}
+                    </DropdownItem>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenuPortal>
+          </Dropdown>
+        )}
       </div>
     </DropdownMenuItem>
   );

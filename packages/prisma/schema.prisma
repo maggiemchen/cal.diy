@@ -2324,6 +2324,7 @@ model InternalNotePreset {
 enum FilterSegmentScope {
   USER
   TEAM
+  SYSTEM
 }
 
 model FilterSegment {
@@ -2332,6 +2333,10 @@ model FilterSegment {
   // Identifies which data table this segment belongs to (e.g. "organization_members", "team_members", "bookings", etc.)
   tableIdentifier  String
   scope            FilterSegmentScope
+  // System segments are predefined and read-only
+  isSystem         Boolean                       @default(false)
+  // Category for organizing predefined segments (e.g. "time_ranges", "status_filters")
+  category         String?
   // Filter configuration
   activeFilters    Json?
   sorting          Json?
@@ -2341,9 +2346,9 @@ model FilterSegment {
   searchTerm       String?                       @db.Text
   createdAt        DateTime                      @default(now())
   updatedAt        DateTime                      @updatedAt
-  // Creator of the segment
-  user             User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId           Int
+  // Creator of the segment (optional for system segments)
+  user             User?                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           Int?
   // Team scope - optional, only set when scope is TEAM
   team             Team?                         @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId           Int?
@@ -2353,6 +2358,8 @@ model FilterSegment {
   @@index([scope, userId, tableIdentifier])
   // For team-scoped segments: scope + teamId + tableIdentifier
   @@index([scope, teamId, tableIdentifier])
+  // For system segments: scope + tableIdentifier + category
+  @@index([scope, tableIdentifier, category])
 }
 
 model UserFilterSegmentPreference {
