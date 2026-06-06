@@ -47,7 +47,7 @@ export class PredefinedFilterSegmentsService {
           v: {
             type: "DATE_RANGE" as ColumnFilterType,
             data: {
-              preset: "this_month",
+              preset: "last_30_days",
             },
           },
         },
