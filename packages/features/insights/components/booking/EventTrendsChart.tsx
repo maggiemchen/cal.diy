@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
@@ -8,7 +9,7 @@ import type { RouterOutputs } from "@calcom/trpc/react";
 
 import { useInsightsBookingParameters } from "../../hooks/useInsightsBookingParameters";
 import { valueFormatter } from "../../lib/valueFormatter";
-import { ChartCard } from "../ChartCard";
+import { ChartCard, type LegendVisibilityState } from "../ChartCard";
 import { LoadingInsight } from "../LoadingInsights";
 
 const COLOR = {
@@ -66,6 +67,7 @@ const CustomTooltip = ({
 export const EventTrendsChart = () => {
   const { t } = useLocale();
   const insightsBookingParams = useInsightsBookingParameters();
+  const [legendVisibility, setLegendVisibility] = useState<LegendVisibilityState>({});
 
   const {
     data: eventTrends,
@@ -79,12 +81,16 @@ export const EventTrendsChart = () => {
     },
   });
 
+  const handleLegendToggle = (visibilityState: LegendVisibilityState) => {
+    setLegendVisibility(visibilityState);
+  };
+
   if (isPending) return <LoadingInsight />;
 
   if (!isSuccess) return null;
 
   return (
-    <ChartCard title={t("event_trends")} legend={legend}>
+    <ChartCard title={t("event_trends")} legend={legend} onLegendToggle={handleLegendToggle}>
       <div className="linechart ml-4 mt-4 h-80 sm:ml-0">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={eventTrends ?? []} margin={{ top: 30, right: 20, left: 0, bottom: 0 }}>
@@ -98,19 +104,25 @@ export const EventTrendsChart = () => {
               tickFormatter={valueFormatter}
             />
             <Tooltip content={<CustomTooltip />} />
-            {legend.map((item) => (
-              <Line
-                key={item.label}
-                type="linear"
-                dataKey={item.label}
-                name={item.label}
-                stroke={item.color}
-                strokeWidth={2}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-                animationDuration={1000}
-              />
-            ))}
+            {legend.map((item) => {
+              // Only render the line if it's visible (default to true if not in state)
+              const isVisible = legendVisibility[item.label] ?? true;
+              if (!isVisible) return null;
+              
+              return (
+                <Line
+                  key={item.label}
+                  type="linear"
+                  dataKey={item.label}
+                  name={item.label}
+                  stroke={item.color}
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                  animationDuration={1000}
+                />
+              );
+            })}
           </LineChart>
         </ResponsiveContainer>
       </div>

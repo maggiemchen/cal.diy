@@ -3,6 +3,7 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 import { useLocale } from "@calcom/lib/hooks/useLocale";
+import type { LegendVisibilityState } from "../ChartCard";
 
 interface RoutingFunnelData {
   name: string;
@@ -14,6 +15,7 @@ interface RoutingFunnelData {
 
 interface RoutingFunnelContentProps {
   data: RoutingFunnelData[];
+  legendVisibility?: LegendVisibilityState;
 }
 
 const COLOR = {
@@ -28,8 +30,15 @@ export const legend = [
   { label: "Accepted Bookings", color: COLOR.ACCEPTED },
 ];
 
-export function RoutingFunnelContent({ data }: RoutingFunnelContentProps) {
+export function RoutingFunnelContent({ data, legendVisibility = {} }: RoutingFunnelContentProps) {
   const { t } = useLocale();
+
+  // Map legend labels to their data keys for visibility checking
+  const legendDataKeyMap = {
+    "Total Submissions": "totalSubmissions",
+    "Successful Routings": "successfulRoutings", 
+    "Accepted Bookings": "acceptedBookings"
+  };
 
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -38,30 +47,37 @@ export function RoutingFunnelContent({ data }: RoutingFunnelContentProps) {
         <XAxis dataKey="name" className="text-xs" axisLine={false} tickLine={false} />
         <YAxis allowDecimals={false} className="text-xs opacity-50" axisLine={false} tickLine={false} />
         <Tooltip content={<CustomTooltip />} />
-        <Area
-          type="linear"
-          name={t("routing_funnel_total_submissions")}
-          dataKey="totalSubmissions"
-          stroke={COLOR.TOTAL}
-          fill={COLOR.TOTAL}
-          fillOpacity={1}
-        />
-        <Area
-          type="linear"
-          name={t("routing_funnel_successful_routings")}
-          dataKey="successfulRoutings"
-          stroke={COLOR.SUCCESFUL}
-          fill={COLOR.SUCCESFUL}
-          fillOpacity={1}
-        />
-        <Area
-          type="linear"
-          name={t("routing_funnel_accepted_bookings")}
-          dataKey="acceptedBookings"
-          stroke={COLOR.ACCEPTED}
-          fill={COLOR.ACCEPTED}
-          fillOpacity={1}
-        />
+        {/* Only render areas if they are visible (default to true if not in state) */}
+        {(legendVisibility["Total Submissions"] ?? true) && (
+          <Area
+            type="linear"
+            name={t("routing_funnel_total_submissions")}
+            dataKey="totalSubmissions"
+            stroke={COLOR.TOTAL}
+            fill={COLOR.TOTAL}
+            fillOpacity={1}
+          />
+        )}
+        {(legendVisibility["Successful Routings"] ?? true) && (
+          <Area
+            type="linear"
+            name={t("routing_funnel_successful_routings")}
+            dataKey="successfulRoutings"
+            stroke={COLOR.SUCCESFUL}
+            fill={COLOR.SUCCESFUL}
+            fillOpacity={1}
+          />
+        )}
+        {(legendVisibility["Accepted Bookings"] ?? true) && (
+          <Area
+            type="linear"
+            name={t("routing_funnel_accepted_bookings")}
+            dataKey="acceptedBookings"
+            stroke={COLOR.ACCEPTED}
+            fill={COLOR.ACCEPTED}
+            fillOpacity={1}
+          />
+        )}
       </AreaChart>
     </ResponsiveContainer>
   );

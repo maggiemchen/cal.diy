@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, useState, useCallback } from "react";
 
 import classNames from "@calcom/ui/classNames";
 import { PanelCard } from "@calcom/ui/components/card";
@@ -10,6 +10,8 @@ type LegendItem = {
   label: string;
   color: string; // hex format
 };
+
+export type LegendVisibilityState = Record<string, boolean>;
 
 export type LegendSize = "sm" | "default";
 
@@ -22,6 +24,7 @@ export function ChartCard({
   children,
   className,
   titleTooltip,
+  onLegendToggle,
 }: {
   title: string | ReactNode;
   subtitle?: string;
@@ -31,8 +34,32 @@ export function ChartCard({
   className?: string;
   titleTooltip?: string;
   children: ReactNode;
+  onLegendToggle?: (visibilityState: LegendVisibilityState) => void;
 }) {
-  const legendComponent = legend && legend.length > 0 ? <Legend items={legend} size={legendSize} /> : null;
+  // Initialize visibility state for all legend items as true (visible by default)
+  const [visibilityState, setVisibilityState] = useState<LegendVisibilityState>(() => {
+    if (!legend) return {};
+    return legend.reduce((acc, item) => {
+      acc[item.label] = true;
+      return acc;
+    }, {} as LegendVisibilityState);
+  });
+
+  const handleLegendItemToggle = useCallback((label: string) => {
+    setVisibilityState(prev => {
+      const newState = { ...prev, [label]: !prev[label] };
+      onLegendToggle?.(newState);
+      return newState;
+    });
+  }, [onLegendToggle]);
+
+  const legendComponent = legend && legend.length > 0 ? 
+    <Legend 
+      items={legend} 
+      size={legendSize} 
+      visibilityState={visibilityState}
+      onItemToggle={handleLegendItemToggle}
+    /> : null;
 
   return (
     <PanelCard
@@ -68,28 +95,58 @@ export function ChartCardItem({
   );
 }
 
-function Legend({ items, size = "default" }: { items: LegendItem[]; size?: LegendSize }) {
+function Legend({ 
+  items, 
+  size = "default", 
+  visibilityState,
+  onItemToggle 
+}: { 
+  items: LegendItem[]; 
+  size?: LegendSize;
+  visibilityState: LegendVisibilityState;
+  onItemToggle: (label: string) => void;
+}) {
   return (
     <div className="bg-default flex items-center gap-2 rounded-lg px-1.5 py-1">
-      {items.map((item, index) => (
-        <Fragment key={item.label}>
-          <div
-            className="relative flex items-center gap-2 rounded-md px-1.5 py-0.5"
-            style={{ backgroundColor: `${item.color}33` }}>
-            <div className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
-            <Tooltip content={item.label}>
-              <p
+      {items.map((item, index) => {
+        const isVisible = visibilityState[item.label] ?? true;
+        return (
+          <Fragment key={item.label}>
+            <button
+              type="button"
+              onClick={() => onItemToggle(item.label)}
+              className={classNames(
+                "relative flex items-center gap-2 rounded-md px-1.5 py-0.5 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500",
+                isVisible 
+                  ? "cursor-pointer" 
+                  : "cursor-pointer opacity-40"
+              )}
+              style={{ 
+                backgroundColor: isVisible ? `${item.color}33` : `${item.color}10` 
+              }}
+              title={`${isVisible ? 'Hide' : 'Show'} ${item.label}`}>
+              <div 
                 className={classNames(
-                  "text-default truncate py-0.5 text-sm font-medium leading-none",
-                  size === "sm" ? "w-16" : ""
-                )}>
-                {item.label}
-              </p>
-            </Tooltip>
-          </div>
-          {index < items.length - 1 && <div className="bg-muted h-5 w-[1px]" />}
-        </Fragment>
-      ))}
+                  "h-2 w-2 rounded-full transition-opacity duration-200",
+                  isVisible ? "opacity-100" : "opacity-50"
+                )}
+                style={{ backgroundColor: item.color }} 
+              />
+              <Tooltip content={`${isVisible ? 'Click to hide' : 'Click to show'} ${item.label}`}>
+                <p
+                  className={classNames(
+                    "truncate py-0.5 text-sm font-medium leading-none transition-colors duration-200",
+                    isVisible ? "text-default" : "text-muted",
+                    size === "sm" ? "w-16" : ""
+                  )}>
+                  {item.label}
+                </p>
+              </Tooltip>
+            </button>
+            {index < items.length - 1 && <div className="bg-muted h-5 w-[1px]" />}
+          </Fragment>
+        );
+      })}
     </div>
   );
 }
