@@ -1,7 +1,7 @@
 "use client";
 
 import LicenseRequired from "@calcom/features/ee/common/components/LicenseRequired";
-import { UserListTable } from "@calcom/features/users/components/UserTable/UserListTable";
+import { UserListTablePaginated } from "@calcom/features/users/components/UserTable/UserListTablePaginated";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { MembershipRole } from "@calcom/prisma/enums";
 import { trpc } from "@calcom/trpc/react";
@@ -19,7 +19,7 @@ const MembersView = () => {
 
   return (
     <LicenseRequired>
-      <div>{!isPending && canLoggedInUserSeeMembers && <UserListTable />}</div>
+      <div>{!isPending && canLoggedInUserSeeMembers && <UserListTablePaginated />}</div>
       {!canLoggedInUserSeeMembers && (
         <div className="border-subtle rounded-xl border p-6" data-testId="members-privacy-warning">
           <h2 className="text-default">{t("only_admin_can_see_members_of_org")}</h2>

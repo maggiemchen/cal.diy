@@ -75,7 +75,7 @@ export const listMembersHandler = async ({ ctx, input }: GetOptions) => {
     };
   }
 
-  const { cursor, limit } = input;
+  const { cursor, limit, page, paginationType } = input;
 
   const getTotalMembers = await prisma.membership.count({
     where: {
@@ -154,53 +154,113 @@ export const listMembersHandler = async ({ ctx, input }: GetOptions) => {
     }
   });
 
-  const teamMembers = await prisma.membership.findMany({
-    where: whereClause,
-    select: {
-      id: true,
-      role: true,
-      accepted: true,
-      user: {
-        select: {
-          id: true,
-          username: true,
-          profiles: {
-            select: {
-              organizationId: true,
-              username: true,
+  // Handle different pagination types
+  let teamMembers;
+  let nextCursor: typeof cursor | undefined = undefined;
+  let hasNextPage = false;
+  let hasPreviousPage = false;
+
+  if (paginationType === "offset" && page) {
+    // Offset-based pagination for page navigation
+    const skip = (page - 1) * limit;
+    teamMembers = await prisma.membership.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        role: true,
+        accepted: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profiles: {
+              select: {
+                organizationId: true,
+                username: true,
+              },
             },
-          },
-          email: true,
-          avatarUrl: true,
-          timeZone: true,
-          disableImpersonation: true,
-          completedOnboarding: true,
-          lastActiveAt: true,
-          teams: {
-            select: {
-              team: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
+            email: true,
+            avatarUrl: true,
+            timeZone: true,
+            disableImpersonation: true,
+            completedOnboarding: true,
+            lastActiveAt: true,
+            teams: {
+              select: {
+                team: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-    cursor: cursor ? { id: cursor } : undefined,
-    take: limit + 1, // We take +1 as itll be used for the next cursor
-    orderBy: {
-      id: "asc",
-    },
-  });
+      skip,
+      take: limit,
+      orderBy: {
+        id: "asc",
+      },
+    });
 
-  let nextCursor: typeof cursor | undefined = undefined;
-  if (teamMembers && teamMembers.length > limit) {
-    const nextItem = teamMembers.pop();
-    nextCursor = nextItem?.id;
+    // Calculate pagination info for offset-based
+    const totalPages = Math.ceil(getTotalMembers / limit);
+    hasNextPage = page < totalPages;
+    hasPreviousPage = page > 1;
+  } else {
+    // Cursor-based pagination for infinite scroll (existing behavior)
+    teamMembers = await prisma.membership.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        role: true,
+        accepted: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profiles: {
+              select: {
+                organizationId: true,
+                username: true,
+              },
+            },
+            email: true,
+            avatarUrl: true,
+            timeZone: true,
+            disableImpersonation: true,
+            completedOnboarding: true,
+            lastActiveAt: true,
+            teams: {
+              select: {
+                team: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      cursor: cursor ? { id: cursor } : undefined,
+      take: limit + 1, // We take +1 as itll be used for the next cursor
+      orderBy: {
+        id: "asc",
+      },
+    });
+
+    // Calculate cursor pagination info
+    if (teamMembers && teamMembers.length > limit) {
+      const nextItem = teamMembers.pop();
+      nextCursor = nextItem?.id;
+      hasNextPage = true;
+    }
   }
 
   const members = await Promise.all(
@@ -269,6 +329,9 @@ export const listMembersHandler = async ({ ctx, input }: GetOptions) => {
   return {
     rows: members || [],
     nextCursor,
+    hasNextPage,
+    hasPreviousPage,
+    currentPage: page || 1,
     meta: {
       totalRowCount: getTotalMembers || 0,
     },
