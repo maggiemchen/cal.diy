@@ -12,6 +12,9 @@ type DummyTableRow = {
   userId: number | null;
   eventTypeId: number | null;
   status: BookingStatus;
+  paid: boolean;
+  attendeeName: string | null;
+  attendeeEmail: string | null;
 };
 
 const emptyData: DummyTableRow[] = [];
@@ -63,6 +66,44 @@ export const useInsightsBookings = () => {
         meta: {
           filter: {
             type: ColumnFilterType.SINGLE_SELECT,
+          },
+        },
+        cell: () => null,
+      }),
+      columnHelper.accessor("paid", {
+        id: "paid",
+        header: t("paid_event_type"),
+        enableColumnFilter: true,
+        enableSorting: false,
+        meta: {
+          filter: {
+            type: ColumnFilterType.MULTI_SELECT,
+          },
+        },
+        cell: () => null,
+      }),
+      // Invisible attendee name filter
+      columnHelper.accessor("attendeeName", {
+        id: "attendeeName",
+        header: t("attendee_name"),
+        enableColumnFilter: true,
+        enableSorting: false,
+        meta: {
+          filter: {
+            type: ColumnFilterType.TEXT,
+          },
+        },
+        cell: () => null,
+      }),
+      // Invisible attendee email filter
+      columnHelper.accessor("attendeeEmail", {
+        id: "attendeeEmail",
+        header: t("attendee_email_variable"),
+        enableColumnFilter: true,
+        enableSorting: false,
+        meta: {
+          filter: {
+            type: ColumnFilterType.TEXT,
           },
         },
         cell: () => null,

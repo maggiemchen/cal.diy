@@ -3,9 +3,10 @@ import md5 from "md5";
 import { z } from "zod";
 
 import dayjs from "@calcom/dayjs";
+import { makeSqlCondition } from "@calcom/features/data-table/lib/server";
 import { ZColumnFilter } from "@calcom/features/data-table/lib/types";
-import type { ColumnFilter } from "@calcom/features/data-table/lib/types";
-import { isSingleSelectFilterValue, isMultiSelectFilterValue } from "@calcom/features/data-table/lib/utils";
+import type { ColumnFilter, TextFilterValue } from "@calcom/features/data-table/lib/types";
+import { isSingleSelectFilterValue, isMultiSelectFilterValue, isTextFilterValue } from "@calcom/features/data-table/lib/utils";
 import type { DateRange } from "@calcom/features/insights/server/insightsDateUtils";
 import type { readonlyPrisma } from "@calcom/prisma";
 import { MembershipRole } from "@calcom/prisma/enums";
@@ -317,6 +318,19 @@ export class InsightsBookingBaseService {
     if (id === "status" && isMultiSelectFilterValue(value)) {
       const statusValues = value.data.map((status) => Prisma.sql`${status}::"BookingStatus"`);
       return Prisma.sql`"status" IN (${Prisma.join(statusValues)})`;
+    }
+
+    if (id === "paid" && isMultiSelectFilterValue(value)) {
+      const paidValues = value.data.map((paid) => paid === "true" || paid === true);
+      return Prisma.sql`"paid" IN (${Prisma.join(paidValues)})`;
+    }
+
+    if (id === "attendeeName" && isTextFilterValue(value)) {
+      return this.buildAttendeeFilterCondition(value, "name");
+    }
+
+    if (id === "attendeeEmail" && isTextFilterValue(value)) {
+      return this.buildAttendeeFilterCondition(value, "email");
     }
 
     return null;
@@ -1108,6 +1122,40 @@ export class InsightsBookingBaseService {
       formattedStartDate: lastPeriodStartDate.format("YYYY-MM-DD"),
       formattedEndDate: lastPeriodEndDate.format("YYYY-MM-DD"),
     };
+  }
+
+  private buildAttendeeFilterCondition(
+    filterValue: TextFilterValue,
+    attendeeColumn: "name" | "email"
+  ): Prisma.Sql | null {
+    if (!isTextFilterValue(filterValue)) {
+      return null;
+    }
+
+    const textCondition = makeSqlCondition(filterValue);
+    if (!textCondition) {
+      return null;
+    }
+
+    // Use switch-case to avoid Prisma.raw for column names
+    let columnCondition: Prisma.Sql;
+    switch (attendeeColumn) {
+      case "name":
+        columnCondition = Prisma.sql`a.name ${textCondition}`;
+        break;
+      case "email":
+        columnCondition = Prisma.sql`a.email ${textCondition}`;
+        break;
+      default:
+        return null;
+    }
+
+    return Prisma.sql`EXISTS (
+      SELECT 1 FROM "Booking" b
+      INNER JOIN "Attendee" a ON a."bookingId" = b."id"
+      WHERE b."uid" = btsd."uid"
+      AND ${columnCondition}
+    )`;
   }
 
   private async isOwnerOrAdmin(userId: number, targetId: number): Promise<boolean> {
