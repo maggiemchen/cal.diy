@@ -10,6 +10,7 @@ export { MostBookedTeamMembersTable } from "./MostBookedTeamMembersTable";
 export { MostCancelledBookingsTables } from "./MostCancelledBookingsTables";
 export { PopularEventsTable } from "./PopularEventsTable";
 export { RecentFeedbackTable } from "./RecentFeedbackTable";
+export { RecentNoShowGuestsTable } from "./RecentNoShowGuestsTable";
 export { TimezoneBadge } from "./TimezoneBadge";
 export { MostCompletedTeamMembersTable } from "./MostCompletedBookings";
 export { LeastCompletedTeamMembersTable } from "./LeastCompletedBookings";

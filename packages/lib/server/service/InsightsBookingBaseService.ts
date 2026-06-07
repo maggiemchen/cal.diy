@@ -999,13 +999,8 @@ export class InsightsBookingBaseService {
     }
 
     const userIds = bookingsFromTeam
-      .filter((booking) => booking.userId !== null)
-      .map((booking) => booking.userId as number)
-      .filter((userId, index, array) => array.indexOf(userId) === index);
-
-    if (userIds.length === 0) {
-      return [];
-    }
+      .map((booking) => booking.userId)
+      .filter((id): id is number => id !== null);
 
     const usersFromTeam = await this.prisma.user.findMany({
       where: {
@@ -1026,24 +1021,106 @@ export class InsightsBookingBaseService {
 
     const result = bookingsFromTeam
       .map((booking) => {
-        if (!booking.userId) {
-          return null;
-        }
-
+        if (!booking.userId) return null;
         const user = userHashMap.get(booking.userId);
-        if (!user) {
-          return null;
-        }
-
-        return {
-          userId: booking.userId,
-          user,
-          emailMd5: md5(user.email),
-          rating: booking.rating,
-          feedback: booking.ratingFeedback,
-        };
+        return user
+          ? {
+              userId: booking.userId,
+              rating: booking.rating,
+              feedback: booking.ratingFeedback,
+              user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                username: user.username,
+                avatarUrl: user.avatarUrl,
+              },
+            }
+          : null;
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    return result;
+  }
+
+  async getRecentNoShowGuestsStats() {
+    const baseConditions = await this.getBaseConditions();
+
+    const noShowGuests = await this.prisma.$queryRaw<
+      Array<{
+        bookingId: number;
+        guestEmail: string;
+        guestName: string;
+        eventTitle: string;
+        startTime: Date;
+        endTime: Date;
+        userId: number | null;
+      }>
+    >`
+      SELECT DISTINCT
+        b.id as "bookingId",
+        a.email as "guestEmail", 
+        a.name as "guestName",
+        b.title as "eventTitle",
+        b."startTime",
+        b."endTime",
+        b."userId"
+      FROM "Attendee" a
+      INNER JOIN "BookingTimeStatusDenormalized" b ON a."bookingId" = b.id
+      WHERE ${baseConditions} AND a."noShow" = true
+      ORDER BY b."startTime" DESC
+      LIMIT 20
+    `;
+
+    if (noShowGuests.length === 0) {
+      return [];
+    }
+
+    const userIds = noShowGuests.map((guest) => guest.userId).filter((id): id is number => id !== null);
+
+    const usersFromTeam =
+      userIds.length > 0
+        ? await this.prisma.user.findMany({
+            where: {
+              id: {
+                in: userIds,
+              },
+            },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              username: true,
+              avatarUrl: true,
+            },
+          })
+        : [];
+
+    const userHashMap = new Map<number, (typeof usersFromTeam)[0]>();
+    usersFromTeam.forEach((user) => {
+      userHashMap.set(user.id, user);
+    });
+
+    const result = noShowGuests.map((guest) => {
+      const host = guest.userId ? userHashMap.get(guest.userId) : null;
+      return {
+        bookingId: guest.bookingId,
+        guestEmail: guest.guestEmail,
+        guestName: guest.guestName,
+        eventTitle: guest.eventTitle,
+        startTime: guest.startTime,
+        endTime: guest.endTime,
+        host: host
+          ? {
+              id: host.id,
+              name: host.name,
+              email: host.email,
+              username: host.username,
+              avatarUrl: host.avatarUrl || `/${host.username}/avatar.png`,
+            }
+          : null,
+      };
+    });
 
     return result;
   }
