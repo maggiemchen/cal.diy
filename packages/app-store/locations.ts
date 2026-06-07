@@ -284,6 +284,21 @@ const getStaticLinkLocationByValue = (value: string | undefined | null) => {
 export const guessEventLocationType = (locationTypeOrValue: string | undefined | null) =>
   getEventLocationType(locationTypeOrValue) || getStaticLinkLocationByValue(locationTypeOrValue);
 
+export const getEventLocationLabel = (
+  locationTypeOrValue: string | undefined | null, 
+  metadata?: { organizerDefaultConferencingAppLabel?: string } | null
+) => {
+  const eventLocationType = guessEventLocationType(locationTypeOrValue);
+  
+  // If there's a custom label for organizer default conferencing app, use it
+  if (metadata?.organizerDefaultConferencingAppLabel && eventLocationType) {
+    return metadata.organizerDefaultConferencingAppLabel;
+  }
+  
+  // Otherwise return the standard label
+  return eventLocationType?.label;
+};
+
 export const LocationType = { ...DefaultEventLocationTypeEnum, ...AppStoreLocationType };
 
 type PrivacyFilteredLocationObject = Optional<LocationObject, "address" | "link">;

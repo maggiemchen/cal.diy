@@ -16,12 +16,14 @@ import { showToast } from "@calcom/ui/components/toast";
 export type UpdateUsersDefaultConferencingAppParams = {
   appSlug: string;
   appLink?: string;
+  customLabel?: string;
   onSuccessCallback: () => void;
   onErrorCallback: () => void;
 };
 
 type LocationTypeSetLinkDialogFormProps = {
   link?: string;
+  customLabel?: string;
   type: EventLocationType["type"];
 };
 
@@ -30,34 +32,48 @@ export function AppSetDefaultLinkDialog({
   setLocationType,
   onSuccess,
   handleUpdateUserDefaultConferencingApp,
+  defaultConferencingApp,
 }: {
   locationType: EventLocationType & { slug: string };
   setLocationType: Dispatch<SetStateAction<(EventLocationType & { slug: string }) | undefined>>;
   onSuccess: () => void;
   handleUpdateUserDefaultConferencingApp: (params: UpdateUsersDefaultConferencingAppParams) => void;
+  defaultConferencingApp?: { appSlug?: string; appLink?: string; customLabel?: string };
 }) {
   const { t } = useLocale();
   const eventLocationTypeOptions = getEventLocationType(locationType.type);
 
+  const isStaticLinkType = eventLocationTypeOptions?.linkType === "static";
+  const currentCustomLabel = locationType.slug === defaultConferencingApp?.appSlug ? defaultConferencingApp?.customLabel : "";
+  const currentLink = locationType.slug === defaultConferencingApp?.appSlug ? defaultConferencingApp?.appLink : "";
+  
   const form = useForm<LocationTypeSetLinkDialogFormProps>({
     resolver: zodResolver(
-      z.object({ link: z.string().regex(new RegExp(eventLocationTypeOptions?.urlRegExp ?? "")) })
+      z.object({ 
+        link: isStaticLinkType ? z.string().regex(new RegExp(eventLocationTypeOptions?.urlRegExp ?? "")) : z.string().optional(),
+        customLabel: z.string().optional()
+      })
     ),
+    defaultValues: {
+      link: currentLink,
+      customLabel: currentCustomLabel,
+    },
   });
 
   return (
     <Dialog open={!!locationType} onOpenChange={() => setLocationType(undefined)}>
       <DialogContent
-        title={t("default_app_link_title")}
-        description={t("default_app_link_description")}
+        title={t("set_default_video_app")}
+        description={t("set_default_video_app_description")}
         type="creation"
-        Icon="circle-alert">
+        Icon="video">
         <Form
           form={form}
           handleSubmit={(values) => {
             handleUpdateUserDefaultConferencingApp({
               appSlug: locationType.slug,
               appLink: values.link,
+              customLabel: values.customLabel,
               onSuccessCallback: () => {
                 onSuccess();
               },
@@ -68,12 +84,20 @@ export function AppSetDefaultLinkDialog({
             setLocationType(undefined);
           }}>
           <>
+            {isStaticLinkType && (
+              <TextField
+                type="text"
+                required
+                {...form.register("link")}
+                placeholder={locationType.organizerInputPlaceholder ?? ""}
+                label={locationType.label ?? ""}
+              />
+            )}
             <TextField
               type="text"
-              required
-              {...form.register("link")}
-              placeholder={locationType.organizerInputPlaceholder ?? ""}
-              label={locationType.label ?? ""}
+              {...form.register("customLabel")}
+              placeholder={t("custom_video_app_label_placeholder")}
+              label={t("custom_video_app_label")}
             />
 
             <DialogFooter showDivider className="mt-8">

@@ -107,16 +107,8 @@ export const AppList = ({
                         StartIcon="video"
                         onClick={() => {
                           const locationType = getLocationFromApp(item?.locationOption?.value ?? "");
-                          if (locationType?.linkType === "static") {
+                          if (locationType) {
                             setLocationType({ ...locationType, slug: appSlug });
-                          } else {
-                            handleUpdateUserDefaultConferencingApp({
-                              appSlug,
-                              onSuccessCallback: () => setBulkUpdateModal(true),
-                              onErrorCallback: () => {
-                                return;
-                              },
-                            });
                           }
                         }}>
                         {t("set_as_default")}
@@ -191,6 +183,7 @@ export const AppList = ({
           setLocationType={() => setLocationType(undefined)}
           onSuccess={onSuccessCallback}
           handleUpdateUserDefaultConferencingApp={handleUpdateUserDefaultConferencingApp}
+          defaultConferencingApp={defaultConferencingApp}
         />
       )}
 

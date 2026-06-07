@@ -327,6 +327,7 @@ export const createdEventSchema = z
 const schemaDefaultConferencingApp = z.object({
   appSlug: z.string().default("daily-video").optional(),
   appLink: z.string().optional(),
+  customLabel: z.string().optional(),
 });
 
 export const userMetadata = z

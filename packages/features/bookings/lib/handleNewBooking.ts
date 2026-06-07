@@ -1062,12 +1062,17 @@ async function handler(
   });
 
   // use host default
+  // Track custom conferencing app label for metadata
+  let organizerDefaultConferencingAppLabel: string | undefined;
+  
   if (locationBodyString == OrganizerDefaultConferencingAppType) {
     const metadataParseResult = userMetadataSchema.safeParse(organizerUser.metadata);
     const organizerMetadata = metadataParseResult.success ? metadataParseResult.data : undefined;
     if (organizerMetadata?.defaultConferencingApp?.appSlug) {
       const app = getAppFromSlug(organizerMetadata?.defaultConferencingApp?.appSlug);
       locationBodyString = app?.appData?.location?.type || locationBodyString;
+      // Store custom label if set
+      organizerDefaultConferencingAppLabel = organizerMetadata.defaultConferencingApp.customLabel;
       if (isManagedEventType || isTeamEventType) {
         organizerOrFirstDynamicGroupMemberDefaultLocationUrl =
           organizerMetadata?.defaultConferencingApp?.appLink;
@@ -2123,11 +2128,10 @@ async function handler(
     videoCallUrl = booking.location;
   }
 
-  const metadata = videoCallUrl
-    ? {
-        videoCallUrl: getVideoCallUrlFromCalEvent(evt) || videoCallUrl,
-      }
-    : undefined;
+  const metadata = {
+    ...(videoCallUrl ? { videoCallUrl: getVideoCallUrlFromCalEvent(evt) || videoCallUrl } : {}),
+    ...(organizerDefaultConferencingAppLabel ? { organizerDefaultConferencingAppLabel } : {}),
+  };
 
   const webhookData: EventPayloadType = {
     ...evt,

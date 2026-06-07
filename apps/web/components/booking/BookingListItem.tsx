@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 
 import type { getEventLocationValue } from "@calcom/app-store/locations";
-import { getSuccessPageLocationMessage, guessEventLocationType } from "@calcom/app-store/locations";
+import { getSuccessPageLocationMessage, getEventLocationLabel } from "@calcom/app-store/locations";
 import dayjs from "@calcom/dayjs";
 // TODO: Use browser locale, implement Intl in Dayjs maybe?
 import "@calcom/dayjs/locales";
@@ -200,7 +200,8 @@ function BookingListItem(booking: BookingItemProps) {
     t,
     booking.status
   );
-  const provider = guessEventLocationType(location);
+  const providerLabel = getEventLocationLabel(location, booking.metadata);
+  const provider = { label: providerLabel };
 
   const isDisabledCancelling = booking.eventType.disableCancelling;
   const isDisabledRescheduling = booking.eventType.disableRescheduling;

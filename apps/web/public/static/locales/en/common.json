@@ -3474,5 +3474,9 @@
   "booking_status": "Booking status",
   "my_bookings": "My Bookings",
   "phone": "Phone",
+  "custom_video_app_label": "Custom label (shown to guests)",
+  "custom_video_app_label_placeholder": "e.g. My Company Meeting Room",
+  "set_default_video_app": "Set as default video app",
+  "set_default_video_app_description": "Set this app as your default for all new event types",
   "ADD_NEW_STRINGS_ABOVE_THIS_LINE_TO_PREVENT_MERGE_CONFLICTS": "↑↑↑↑↑↑↑↑↑↑↑↑↑ Add your new strings above here ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑"
 }

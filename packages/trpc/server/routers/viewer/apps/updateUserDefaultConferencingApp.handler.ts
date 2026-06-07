@@ -54,6 +54,7 @@ export const updateUserDefaultConferencingAppHandler = async ({
         defaultConferencingApp: {
           appSlug: input.appSlug,
           appLink: input.appLink,
+          customLabel: input.customLabel,
         },
       },
     },
