@@ -1064,7 +1064,7 @@ async function handler(
   // use host default
   // Track custom conferencing app label for metadata
   let organizerDefaultConferencingAppLabel: string | undefined;
-  
+
   if (locationBodyString == OrganizerDefaultConferencingAppType) {
     const metadataParseResult = userMetadataSchema.safeParse(organizerUser.metadata);
     const organizerMetadata = metadataParseResult.success ? metadataParseResult.data : undefined;
@@ -2128,10 +2128,16 @@ async function handler(
     videoCallUrl = booking.location;
   }
 
-  const metadata = {
+  // Metadata for booking storage (includes custom label)
+  const bookingMetadata = {
     ...(videoCallUrl ? { videoCallUrl: getVideoCallUrlFromCalEvent(evt) || videoCallUrl } : {}),
     ...(organizerDefaultConferencingAppLabel ? { organizerDefaultConferencingAppLabel } : {}),
   };
+
+  // Metadata for workflow events (only videoCallUrl expected)
+  const workflowMetadata = videoCallUrl
+    ? { videoCallUrl: getVideoCallUrlFromCalEvent(evt) || videoCallUrl }
+    : undefined;
 
   const webhookData: EventPayloadType = {
     ...evt,
@@ -2145,7 +2151,7 @@ async function handler(
     rescheduleEndTime: originalRescheduledBooking?.endTime
       ? dayjs(originalRescheduledBooking?.endTime).utc().format()
       : undefined,
-    metadata: { ...metadata, ...reqBody.metadata },
+    metadata: { ...bookingMetadata, ...reqBody.metadata },
     eventTypeId,
     status: "ACCEPTED",
     smsReminderNumber: booking?.smsReminderNumber || undefined,
@@ -2222,7 +2228,7 @@ async function handler(
         ...booking.user,
         email: null,
       },
-      videoCallUrl: metadata?.videoCallUrl,
+      videoCallUrl: workflowMetadata?.videoCallUrl,
       // Ensure seatReferenceUid is properly typed as string | null
       seatReferenceUid: evt.attendeeSeatId,
     };
@@ -2341,7 +2347,7 @@ async function handler(
         },
         data: {
           location: evt.location,
-          metadata: { ...(typeof booking.metadata === "object" && booking.metadata), ...metadata },
+          metadata: { ...(typeof booking.metadata === "object" && booking.metadata), ...bookingMetadata },
           references: {
             createMany: {
               data: referencesToCreate,
@@ -2357,7 +2363,7 @@ async function handler(
   const evtWithMetadata = {
     ...evt,
     rescheduleReason,
-    metadata,
+    metadata: workflowMetadata,
     eventType: { slug: eventType.slug, schedulingType: eventType.schedulingType, hosts: eventType.hosts },
     bookerUrl,
   };
@@ -2439,7 +2445,7 @@ async function handler(
     ...(isDryRun ? { troubleshooterData } : {}),
     references: referencesToCreate,
     seatReferenceUid: evt.attendeeSeatId,
-    videoCallUrl: metadata?.videoCallUrl,
+    videoCallUrl: workflowMetadata?.videoCallUrl,
   };
 }
 
