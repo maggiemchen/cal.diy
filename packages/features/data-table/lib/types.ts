@@ -241,7 +241,11 @@ export type FilterSegmentOutput = {
   id: number;
   name: string;
   tableIdentifier: string;
-  scope: "USER" | "TEAM";
+  scope: "USER" | "TEAM" | "SYSTEM";
+  category?: string | null;
+  description?: string | null;
+  displayOrder?: number | null;
+  isPredefined?: boolean;
   activeFilters: ActiveFilters;
   sorting: SortingState;
   columnVisibility: Record<string, boolean>;

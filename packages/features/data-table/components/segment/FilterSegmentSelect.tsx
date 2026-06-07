@@ -59,14 +59,34 @@ export function FilterSegmentSelect() {
   ];
 
   const segmentGroups = useMemo(() => {
-    const sortFn = (a: FilterSegmentOutput, b: FilterSegmentOutput) => a.name.localeCompare(b.name);
+    const sortFn = (a: FilterSegmentOutput, b: FilterSegmentOutput) => {
+      // Sort predefined segments by display order, then by name
+      if (a.isPredefined && b.isPredefined) {
+        return (a.displayOrder ?? 999) - (b.displayOrder ?? 999);
+      }
+      return a.name.localeCompare(b.name);
+    };
 
-    const personalSegments = segments?.filter((segment) => !segment.team) || [];
+    const predefinedSegments = segments?.filter((segment) => segment.isPredefined) || [];
+    const personalSegments = segments?.filter((segment) => !segment.team && !segment.isPredefined) || [];
     const teamSegments =
       segments?.filter(
         (segment): segment is FilterSegmentOutput & { team: NonNullable<FilterSegmentOutput["team"]> } =>
-          segment.team !== null
+          segment.team !== null && !segment.isPredefined
       ) || [];
+
+    // Group predefined segments by category
+    const predefinedSegmentsByCategory = predefinedSegments.reduce<{ [category: string]: FilterSegmentOutput[] }>(
+      (acc, segment) => {
+        const category = segment.category || "General";
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(segment);
+        return acc;
+      },
+      {}
+    );
 
     // Group team segments by team name
     const teamSegmentsByTeam = teamSegments.reduce<{ [teamName: string]: FilterSegmentOutput[] }>(
@@ -82,18 +102,30 @@ export function FilterSegmentSelect() {
     );
 
     return [
+      // Predefined segments first, grouped by category
+      ...Object.entries(predefinedSegmentsByCategory)
+        .map(([category, segments]) => ({
+          label: category,
+          segments: segments.sort(sortFn),
+          isPredefined: true,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+      // Personal segments
       ...(personalSegments.length > 0
         ? [
             {
               label: t("personal"),
               segments: personalSegments.sort(sortFn),
+              isPredefined: false,
             },
           ]
         : []),
+      // Team segments
       ...Object.entries(teamSegmentsByTeam)
         .map(([teamName, segments]) => ({
           label: teamName,
           segments: segments.sort(sortFn),
+          isPredefined: false,
         }))
         .sort((a, b) => a.label.localeCompare(b.label)),
     ];
@@ -126,7 +158,12 @@ export function FilterSegmentSelect() {
             {segmentGroups.map((group, index) => (
               <div key={index}>
                 {group.label && (
-                  <DropdownMenuLabel className={index === 0 ? "" : "mt-2"}>{group.label}</DropdownMenuLabel>
+                  <DropdownMenuLabel className={index === 0 ? "" : "mt-2"}>
+                    <div className="flex items-center gap-1">
+                      {group.isPredefined && <Icon name="sparkles" className="h-3 w-3" />}
+                      {group.label}
+                    </div>
+                  </DropdownMenuLabel>
                 )}
                 {group.segments.map((segment) => (
                   <DropdownItemWithSubmenu
@@ -141,7 +178,15 @@ export function FilterSegmentSelect() {
                       }
                     }}>
                     {segment.id === segmentId && <Icon name="check" className="ml-3 h-4 w-4" />}
-                    <span className="ml-3">{segment.name}</span>
+                    <div className="ml-3 flex-1">
+                      <div className="flex items-center gap-1">
+                        {segment.isPredefined && <Icon name="sparkles" className="h-3 w-3 text-blue-500" />}
+                        <span>{segment.name}</span>
+                      </div>
+                      {segment.description && (
+                        <div className="text-xs text-gray-500 mt-0.5">{segment.description}</div>
+                      )}
+                    </div>
                   </DropdownItemWithSubmenu>
                 ))}
               </div>
@@ -186,6 +231,11 @@ function DropdownItemWithSubmenu({
 
   // Filter submenu items based on segment type and user role
   const filteredSubmenuItems = submenuItems.filter((item) => {
+    // Predefined segments: only allow duplication
+    if (segment.isPredefined) {
+      return item.labelKey === "duplicate";
+    }
+
     if (!segment.team) {
       // Personal segments: show all actions
       return true;

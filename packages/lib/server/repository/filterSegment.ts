@@ -7,6 +7,7 @@ import {
 } from "@calcom/features/data-table/lib/types";
 import { prisma } from "@calcom/prisma";
 import type { FilterSegment, UserFilterSegmentPreference } from "@calcom/prisma/client";
+import { getPredefinedSegmentsForTable } from "@calcom/lib/predefinedFilterSegments";
 
 import type { TCreateFilterSegmentInputSchema, TUpdateFilterSegmentInputSchema } from "./filterSegment.type";
 
@@ -77,6 +78,11 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
               in: userTeamIds,
             },
           },
+          // System segments (predefined)
+          {
+            scope: "SYSTEM",
+            isPredefined: true,
+          },
         ],
       },
       select: {
@@ -84,6 +90,10 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
         name: true,
         tableIdentifier: true,
         scope: true,
+        category: true,
+        description: true,
+        displayOrder: true,
+        isPredefined: true,
         activeFilters: true,
         sorting: true,
         columnVisibility: true,
@@ -102,10 +112,38 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
         },
       },
       orderBy: [
-        { scope: "desc" }, // USER segments first, then TEAM segments
+        { isPredefined: "desc" }, // Predefined segments first
+        { displayOrder: "asc" }, // Then by display order for predefined
+        { scope: "desc" }, // Then USER segments, then TEAM segments
         { createdAt: "desc" }, // Newest first within each scope
       ],
     });
+
+    // Get predefined segments from constants (as fallback if not in DB)
+    const predefinedSegments = getPredefinedSegmentsForTable(tableIdentifier);
+    
+    // Convert predefined segments to FilterSegmentOutput format with negative IDs to avoid conflicts
+    const predefinedSegmentOutputs: FilterSegmentOutput[] = predefinedSegments.map((segment, index) => ({
+      id: -(index + 1), // Negative IDs for predefined segments
+      name: segment.name,
+      tableIdentifier: segment.tableIdentifier,
+      scope: segment.scope,
+      category: segment.category,
+      description: segment.description,
+      displayOrder: segment.displayOrder,
+      isPredefined: segment.isPredefined,
+      activeFilters: segment.activeFilters,
+      sorting: segment.sorting || [],
+      columnVisibility: segment.columnVisibility || {},
+      columnSizing: segment.columnSizing || {},
+      perPage: segment.perPage,
+      searchTerm: segment.searchTerm || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: null,
+      teamId: null,
+      team: null,
+    }));
 
     const parsedSegments: FilterSegmentOutput[] = segments.map((segment) => ({
       ...segment,
@@ -114,6 +152,17 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
       columnVisibility: ZColumnVisibility.catch({}).parse(segment.columnVisibility),
       columnSizing: ZColumnSizing.catch({}).parse(segment.columnSizing),
     }));
+
+    // Combine database segments with predefined segments
+    // Filter out predefined segments that already exist in the database
+    const existingPredefinedNames = new Set(
+      parsedSegments.filter(s => s.isPredefined).map(s => s.name)
+    );
+    const uniquePredefinedSegments = predefinedSegmentOutputs.filter(
+      s => !existingPredefinedNames.has(s.name)
+    );
+
+    const allSegments = [...parsedSegments, ...uniquePredefinedSegments];
 
     const preference = await prisma.userFilterSegmentPreference.findUnique({
       where: {
@@ -128,7 +177,7 @@ export class FilterSegmentRepository implements IFilterSegmentRepository {
     });
 
     return {
-      segments: parsedSegments,
+      segments: allSegments,
       preferredSegmentId: preference?.segmentId || null,
     };
   }

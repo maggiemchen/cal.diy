@@ -3,10 +3,12 @@
 import {
   DataTableProvider,
   DataTableFilters,
+  DataTableSegment,
   DateRangeFilter,
   ColumnFilterType,
   type FilterableColumn,
 } from "@calcom/features/data-table";
+import { useSegments } from "@calcom/features/data-table/hooks/useSegments";
 import {
   AverageEventDurationChart,
   BookingKPICards,
@@ -31,7 +33,7 @@ import { useLocale } from "@calcom/lib/hooks/useLocale";
 
 export default function InsightsPage({ timeZone }: { timeZone: string }) {
   return (
-    <DataTableProvider timeZone={timeZone}>
+    <DataTableProvider timeZone={timeZone} useSegments={useSegments}>
       <InsightsOrgTeamsProvider>
         <InsightsPageContent />
       </InsightsOrgTeamsProvider>
@@ -60,6 +62,8 @@ function InsightsPageContent() {
         <DataTableFilters.ActiveFilters table={table} />
         <DataTableFilters.AddFilterButton table={table} variant="sm" showWhenFilterApplied />
         <DataTableFilters.ClearFiltersButton exclude={["createdAt"]} />
+        <DataTableSegment.SaveButton />
+        <DataTableSegment.Select />
         <div className="grow" />
         <Download />
         <DateRangeFilter column={createdAtColumn} />
