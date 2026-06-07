@@ -8,7 +8,16 @@ import { teamMetadataSchema } from "@calcom/prisma/zod-utils";
 
 import stripe from "../lib/server";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// Type assertion for session - this is added by the catch-all route handler
+interface RequestWithSession extends NextApiRequest {
+  session?: {
+    user?: {
+      id: number;
+    };
+  };
+}
+
+export default async function handler(req: RequestWithSession, res: NextApiResponse) {
   if (req.method !== "POST" && req.method !== "GET") {
     return res.status(405).json({ message: "Method not allowed" });
   }
@@ -25,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Check if user has admin/owner access to the organization
   const membership = await prisma.membership.findFirst({
     where: {
-      userId: req.session.user.id,
+      userId: req.session!.user!.id,
       teamId: organizationId,
     },
     include: {
