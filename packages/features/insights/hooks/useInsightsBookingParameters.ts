@@ -10,10 +10,12 @@ import { getDefaultStartDate, getDefaultEndDate } from "@calcom/features/data-ta
 import { CURRENT_TIMEZONE } from "@calcom/lib/timezoneConstants";
 
 import { useInsightsOrgTeams } from "./useInsightsOrgTeams";
+import { useInsightsTimestampSelection } from "./useInsightsTimestampSelection";
 
 export function useInsightsBookingParameters() {
   const { scope, selectedTeamId } = useInsightsOrgTeams();
   const { timeZone } = useDataTable();
+  const { selectedTimestamp } = useInsightsTimestampSelection();
 
   const createdAtRange = useFilterValue("createdAt", ZDateRangeFilterValue)?.data;
   // TODO for future: this preserving local time & startOf & endOf should be handled
@@ -42,5 +44,6 @@ export function useInsightsBookingParameters() {
     endDate,
     timeZone: timeZone || CURRENT_TIMEZONE,
     columnFilters,
+    dateTarget: selectedTimestamp,
   };
 }

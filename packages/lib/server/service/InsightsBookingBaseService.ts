@@ -129,7 +129,7 @@ export type InsightsBookingServiceFilterOptions = z.infer<typeof insightsBooking
 export const insightsBookingServiceFilterOptionsSchema = z.object({
   dateRange: z
     .object({
-      target: z.enum(["createdAt", "startTime"]),
+      target: z.enum(["createdAt", "startTime", "endTime", "updatedAt"]),
       startDate: z.string(),
       endDate: z.string(),
     })

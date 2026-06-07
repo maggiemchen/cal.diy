@@ -314,9 +314,9 @@ export interface IResultTeamList {
 function createInsightsBookingService(
   ctx: { user: { id: number; organizationId: number | null } },
   input: z.infer<typeof bookingRepositoryBaseInputSchema>,
-  dateTarget: "createdAt" | "startTime" = "createdAt"
+  dateTargetOverride?: "createdAt" | "startTime" | "endTime" | "updatedAt"
 ) {
-  const { scope, selectedTeamId, startDate, endDate, columnFilters } = input;
+  const { scope, selectedTeamId, startDate, endDate, columnFilters, dateTarget } = input;
   return getInsightsBookingService({
     options: {
       scope,
@@ -327,7 +327,7 @@ function createInsightsBookingService(
     filters: {
       ...(columnFilters && { columnFilters }),
       dateRange: {
-        target: dateTarget,
+        target: dateTargetOverride || dateTarget,
         startDate,
         endDate,
       },

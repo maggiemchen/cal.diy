@@ -7,4 +7,5 @@ export { KPICard } from "./KPICard";
 export { LineChart } from "./LineChart";
 export { LoadingInsight } from "./LoadingInsights";
 export { ResponseValueCell } from "./ResponseValueCell";
+export { TimestampSelector } from "./TimestampSelector";
 export { UserStatsTable } from "./UserStatsTable";

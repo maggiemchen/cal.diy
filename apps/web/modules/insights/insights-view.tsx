@@ -26,6 +26,7 @@ import {
   RecentFeedbackTable,
   TimezoneBadge,
 } from "@calcom/features/insights/components/booking";
+import { TimestampSelector } from "@calcom/features/insights/components/TimestampSelector";
 import { InsightsOrgTeamsProvider } from "@calcom/features/insights/context/InsightsOrgTeamsProvider";
 import { Download } from "@calcom/features/insights/filters/Download";
 import { OrgTeamsFilter } from "@calcom/features/insights/filters/OrgTeamsFilter";
@@ -66,6 +67,7 @@ function InsightsPageContent() {
         <DataTableFilters.ClearFiltersButton exclude={["createdAt"]} />
         <div className="grow" />
         <Download />
+        <TimestampSelector />
         <DateRangeFilter column={createdAtColumn} />
         <TimezoneBadge />
       </div>
