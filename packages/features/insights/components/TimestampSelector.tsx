@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 
-import { useLocale } from "@calcom/lib/hooks/useLocale";
-import { Button } from "@calcom/ui";
-import { Calendar, ChevronDown } from "@calcom/ui/components/icon";
-import { Dropdown, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@calcom/ui";
+import { Button } from "@calcom/ui/components/button";
+import {
+  Dropdown,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@calcom/ui/components/dropdown";
+import { Icon } from "@calcom/ui/components/icon";
 
-import { useInsightsTimestampSelection, type TimestampOption } from "../hooks/useInsightsTimestampSelection";
+import { useInsightsTimestampSelection } from "../hooks/useInsightsTimestampSelection";
 
 export function TimestampSelector() {
-  const { t } = useLocale();
   const { selectedTimestamp, updateTimestamp, timestampOptions } = useInsightsTimestampSelection();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -22,11 +25,11 @@ export function TimestampSelector() {
         <Button
           variant="outline"
           size="sm"
-          className="h-9 border-default text-default hover:border-emphasis"
+          className="border-default text-default hover:border-emphasis h-9"
           data-testid="timestamp-selector-trigger">
-          <Calendar className="mr-2 h-4 w-4" />
+          <Icon name="calendar" className="mr-2 h-4 w-4" />
           <span className="max-w-32 truncate">{selectedOption?.label}</span>
-          <ChevronDown className="ml-1 h-4 w-4" />
+          <Icon name="chevron-down" className="ml-1 h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
