@@ -1,5 +1,5 @@
-import BillingPage, { generateMetadata } from "../../../billing/page";
+import OrganizationBillingPage, { generateMetadata } from "./organization-billing-page";
 
 export { generateMetadata };
 
-export default BillingPage;
+export default OrganizationBillingPage;
