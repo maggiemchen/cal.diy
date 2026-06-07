@@ -1,11 +1,10 @@
-import { FilterSegmentScope } from "@prisma/client";
 import type { ColumnFilter } from "@calcom/features/data-table/lib/types";
 import { ColumnFilterType } from "@calcom/features/data-table/lib/types";
 
 export interface PredefinedFilterSegment {
   name: string;
   tableIdentifier: string;
-  scope: FilterSegmentScope;
+  scope: "SYSTEM";
   category: string;
   description: string;
   displayOrder: number;
@@ -23,7 +22,7 @@ export const BOOKING_INSIGHTS_SEGMENTS: PredefinedFilterSegment[] = [
   {
     name: "Recent Bookings",
     tableIdentifier: "/insights",
-    scope: FilterSegmentScope.SYSTEM,
+    scope: "SYSTEM" as const,
     category: "Time-based",
     description: "Show bookings from the last 7 days",
     displayOrder: 1,
@@ -44,7 +43,7 @@ export const BOOKING_INSIGHTS_SEGMENTS: PredefinedFilterSegment[] = [
   {
     name: "Confirmed Bookings",
     tableIdentifier: "/insights",
-    scope: FilterSegmentScope.SYSTEM,
+    scope: "SYSTEM" as const,
     category: "Status-based",
     description: "Show only confirmed bookings",
     displayOrder: 2,
@@ -63,7 +62,7 @@ export const BOOKING_INSIGHTS_SEGMENTS: PredefinedFilterSegment[] = [
   {
     name: "Cancelled Bookings",
     tableIdentifier: "/insights",
-    scope: FilterSegmentScope.SYSTEM,
+    scope: "SYSTEM" as const,
     category: "Status-based", 
     description: "Show only cancelled bookings",
     displayOrder: 3,
@@ -82,7 +81,7 @@ export const BOOKING_INSIGHTS_SEGMENTS: PredefinedFilterSegment[] = [
   {
     name: "Pending Bookings",
     tableIdentifier: "/insights",
-    scope: FilterSegmentScope.SYSTEM,
+    scope: "SYSTEM" as const,
     category: "Status-based",
     description: "Show bookings awaiting confirmation", 
     displayOrder: 4,
@@ -101,7 +100,7 @@ export const BOOKING_INSIGHTS_SEGMENTS: PredefinedFilterSegment[] = [
   {
     name: "This Month",
     tableIdentifier: "/insights",
-    scope: FilterSegmentScope.SYSTEM,
+    scope: "SYSTEM" as const,
     category: "Time-based",
     description: "Show bookings from the current month",
     displayOrder: 5,
@@ -126,7 +125,7 @@ export const ROUTING_INSIGHTS_SEGMENTS: PredefinedFilterSegment[] = [
   {
     name: "Recent Submissions",
     tableIdentifier: "/insights/routing",
-    scope: FilterSegmentScope.SYSTEM,
+    scope: "SYSTEM" as const,
     category: "Time-based",
     description: "Show routing form submissions from the last 7 days",
     displayOrder: 1,
@@ -147,7 +146,7 @@ export const ROUTING_INSIGHTS_SEGMENTS: PredefinedFilterSegment[] = [
   {
     name: "Successfully Booked",
     tableIdentifier: "/insights/routing",
-    scope: FilterSegmentScope.SYSTEM,
+    scope: "SYSTEM" as const,
     category: "Status-based",
     description: "Show routing forms that resulted in confirmed bookings",
     displayOrder: 2,
@@ -166,7 +165,7 @@ export const ROUTING_INSIGHTS_SEGMENTS: PredefinedFilterSegment[] = [
   {
     name: "Failed Routes",
     tableIdentifier: "/insights/routing",
-    scope: FilterSegmentScope.SYSTEM,
+    scope: "SYSTEM" as const,
     category: "Status-based",
     description: "Show routing forms where booking failed or was cancelled",
     displayOrder: 3,
@@ -185,7 +184,7 @@ export const ROUTING_INSIGHTS_SEGMENTS: PredefinedFilterSegment[] = [
   {
     name: "Marketing Attribution",
     tableIdentifier: "/insights/routing",
-    scope: FilterSegmentScope.SYSTEM,
+    scope: "SYSTEM" as const,
     category: "Marketing",
     description: "Show submissions with UTM campaign tracking",
     displayOrder: 4,
@@ -206,7 +205,7 @@ export const ROUTING_INSIGHTS_SEGMENTS: PredefinedFilterSegment[] = [
   {
     name: "This Month",
     tableIdentifier: "/insights/routing",
-    scope: FilterSegmentScope.SYSTEM,
+    scope: "SYSTEM" as const,
     category: "Time-based", 
     description: "Show routing form submissions from the current month",
     displayOrder: 5,

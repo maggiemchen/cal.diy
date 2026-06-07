@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { FilterSegmentScope } from "@prisma/client";
 import { ColumnFilterType } from "@calcom/features/data-table/lib/types";
 
 import {
@@ -18,7 +17,7 @@ describe("Predefined Filter Segments", () => {
       BOOKING_INSIGHTS_SEGMENTS.forEach((segment) => {
         expect(segment).toHaveProperty("name");
         expect(segment).toHaveProperty("tableIdentifier", "/insights");
-        expect(segment).toHaveProperty("scope", FilterSegmentScope.SYSTEM);
+        expect(segment).toHaveProperty("scope", "SYSTEM");
         expect(segment).toHaveProperty("category");
         expect(segment).toHaveProperty("description");
         expect(segment).toHaveProperty("displayOrder");
@@ -70,7 +69,7 @@ describe("Predefined Filter Segments", () => {
       ROUTING_INSIGHTS_SEGMENTS.forEach((segment) => {
         expect(segment).toHaveProperty("name");
         expect(segment).toHaveProperty("tableIdentifier", "/insights/routing");
-        expect(segment).toHaveProperty("scope", FilterSegmentScope.SYSTEM);
+        expect(segment).toHaveProperty("scope", "SYSTEM");
         expect(segment).toHaveProperty("category");
         expect(segment).toHaveProperty("description");
         expect(segment).toHaveProperty("displayOrder");
